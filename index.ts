@@ -3,23 +3,23 @@ import { createProxySchema, HttpGraphQLClient } from 'graphql-weaver';
 import * as graphqlHTTP from 'express-graphql';
 import { GraphQLSchema, DocumentNode } from 'graphql';
 
-function getAuthTokenFromGraphQLContext(context: any) {
-  if (!context) {
-    console.log("not valid", context)
-    return undefined
-  }
-  // console.log('context', context);
-  console.log('headers', context.headers);
-  return context.headers['authorization'];
-}
+// function getAuthTokenFromGraphQLContext(context: any) {
+//   if (!context) {
+//     console.log("not valid", context)
+//     return undefined
+//   }
+//   // console.log('context', context);
+//   console.log('headers', context.headers);
+//   return context.headers['authorization'];
+// }
 
 class AuthForwardingGraphQLClient extends HttpGraphQLClient {
   protected async getHeaders(document: DocumentNode, variables?: { [name: string]: any }, context?: any, introspect?: boolean): Promise<{ [index: string]: string }> {
-    console.log('pass', context)
+    console.log('pass', context);
     const headers = await super.getHeaders(document, context, introspect);
     return {
-        ...headers,
-        Authorization: getAuthTokenFromGraphQLContext(context)
+      ...headers,
+      'GN-APIKEY': 'dev_apikey'
     };
   }
 }
@@ -27,11 +27,21 @@ class AuthForwardingGraphQLClient extends HttpGraphQLClient {
 async function run() {
   const schema: GraphQLSchema = await createProxySchema({
     endpoints: [{
-        client: new AuthForwardingGraphQLClient({url: 'https://www.universe.com/graphql/beta'})
+      namespace: 'scorpion',
+      client: new AuthForwardingGraphQLClient({url: 'http://graphql.lvh.me:4000/'})
     }, {
-        namespace: 'library',
-        typePrefix: 'Zone',
-        client: new AuthForwardingGraphQLClient({url: 'https://5rrx10z19.lp.gql.zone/graphql'})
+      namespace: 'kitana',
+      typePrefix: 'Kitana',
+      client: new AuthForwardingGraphQLClient({url: 'http://graphql-pagamento.lvh.me:3001/'}),
+      fieldMetadata: {
+        'Payer.profile': {
+          link: {
+            field: 'scorpion.profile',
+            argument: 'id',
+            batchMode: false,
+          }
+        }
+      }
     }]
   })
 
