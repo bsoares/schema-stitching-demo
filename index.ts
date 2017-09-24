@@ -27,9 +27,6 @@ class AuthForwardingGraphQLClient extends HttpGraphQLClient {
 async function run() {
   const schema: GraphQLSchema = await createProxySchema({
     endpoints: [{
-      namespace: 'scorpion',
-      client: new AuthForwardingGraphQLClient({url: 'http://graphql.lvh.me:4000/'})
-    }, {
       namespace: 'kitana',
       typePrefix: 'Kitana',
       client: new AuthForwardingGraphQLClient({url: 'http://graphql-pagamento.lvh.me:3001/'}),
@@ -38,7 +35,27 @@ async function run() {
           link: {
             field: 'scorpion.profile',
             argument: 'id',
-            batchMode: false,
+            batchMode: false
+          }
+        }
+      }
+    }, {
+      namespace: 'scorpion',
+      typePrefix: 'Scorpion',
+      client: new AuthForwardingGraphQLClient({url: 'http://graphql.lvh.me:4000/'}),
+      fieldMetadata: {
+        'User.payer': {
+          link: {
+            field: 'kitana.payer',
+            argument: 'userId',
+            batchMode: false
+          }
+        },
+        'Profile.payer': {
+          link: {
+            field: 'kitana.payer',
+            argument: 'profileId',
+            batchMode: false
           }
         }
       }
@@ -55,7 +72,6 @@ async function run() {
       graphiql: true
     }
   }));
-
 
   app.listen(3210);
   console.log('Server running. Open http://localhost:3210/graphql to run queries.');
